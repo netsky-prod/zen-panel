@@ -38,21 +38,23 @@ func (g *ConfigGenerator) GenerateSingboxConfig(user *models.User, inbounds []mo
 		DNS: map[string]interface{}{
 			"servers": []map[string]interface{}{
 				{
-					"tag":     "google",
-					"address": "tls://8.8.8.8",
+					"tag":     "proxy-dns",
+					"address": "8.8.8.8",
+					"detour":  "proxy",
 				},
 				{
-					"tag":     "local",
-					"address": "223.5.5.5",
+					"tag":     "direct-dns",
+					"address": "8.8.8.8",
 					"detour":  "direct",
 				},
 			},
 			"rules": []map[string]interface{}{
 				{
 					"outbound": "any",
-					"server":   "local",
+					"server":   "direct-dns",
 				},
 			},
+			"final": "proxy-dns",
 			"strategy": "prefer_ipv4",
 		},
 		Inbounds: []map[string]interface{}{

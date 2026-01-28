@@ -351,11 +351,11 @@ func (h *UserHandler) GetConfig(c *fiber.Ctx) error {
 		})
 	}
 
-	format := c.Query("format", "json")
+	format := c.Query("format", "all")
 
 	switch format {
-	case "json":
-		// Полный sing-box JSON конфиг
+	case "all", "json":
+		// Возвращаем всё: sing-box конфиг + share URLs
 		config, err := h.configGen.GenerateSingboxConfig(&user, user.Inbounds)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -363,9 +363,35 @@ func (h *UserHandler) GetConfig(c *fiber.Ctx) error {
 				"error":   "Ошибка генерации конфига",
 			})
 		}
+
+		// Генерируем share URLs с информацией об инбаундах
+		var shareURLs []map[string]string
+		var firstURL string
+		for _, inbound := range user.Inbounds {
+			if !inbound.Enabled {
+				continue
+			}
+			shareURL, err := h.configGen.GenerateShareURL(&user, &inbound)
+			if err != nil {
+				continue
+			}
+			if firstURL == "" {
+				firstURL = shareURL
+			}
+			shareURLs = append(shareURLs, map[string]string{
+				"url":          shareURL,
+				"inbound_name": inbound.Name,
+				"node_name":    inbound.Node.Name,
+			})
+		}
+
 		return c.JSON(fiber.Map{
 			"success": true,
-			"data":    config,
+			"data": fiber.Map{
+				"singbox":    config,
+				"share_url":  firstURL,
+				"share_urls": shareURLs,
+			},
 		})
 
 	case "url":
@@ -424,7 +450,7 @@ func (h *UserHandler) GetConfig(c *fiber.Ctx) error {
 	default:
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"success": false,
-			"error":   "Неподдерживаемый формат. Используйте: json, url, qr, subscription",
+			"error":   "Неподдерживаемый формат. Используйте: all, json, url, qr, subscription",
 		})
 	}
 }

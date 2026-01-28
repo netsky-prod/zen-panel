@@ -81,6 +81,8 @@ services:
       dockerfile: Dockerfile
     container_name: zen-node-agent
     restart: unless-stopped
+    ports:
+      - "${NODE_AGENT_PORT:-8880}:8880"  # API для управления нодой
     environment:
       CONFIG_PATH: /etc/sing-box/config.json
       API_TOKEN: ${NODE_API_TOKEN:-secret-node-token}

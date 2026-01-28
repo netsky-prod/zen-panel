@@ -46,8 +46,8 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 type Node struct {
 	ID        uint           `gorm:"primaryKey" json:"id"`
 	Name      string         `gorm:"size:255;not null" json:"name"`
-	Address   string         `gorm:"size:255;not null" json:"address"`   // IP или домен сервера
-	APIPort   int            `gorm:"default:9090" json:"api_port"`       // Порт агента
+	Address   string         `gorm:"size:255;not null" json:"address"`    // Публичный IP или домен сервера
+	APIPort   int            `gorm:"default:9090" json:"api_port"`        // Порт агента
 	APIToken  string         `gorm:"size:255" json:"api_token,omitempty"` // Токен для связи с агентом
 	Enabled   bool           `gorm:"default:true" json:"enabled"`
 	CreatedAt time.Time      `json:"created_at"`

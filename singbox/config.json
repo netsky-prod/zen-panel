@@ -1,0 +1,43 @@
+{
+  "log": {
+    "level": "info",
+    "timestamp": true
+  },
+  "inbounds": [
+    {
+      "type": "vless",
+      "tag": "vless-reality",
+      "listen": "::",
+      "listen_port": 8443,
+      "users": [
+        {
+          "uuid": "00000000-0000-0000-0000-000000000001",
+          "flow": "xtls-rprx-vision"
+        }
+      ],
+      "tls": {
+        "enabled": true,
+        "server_name": "memory-mcp.net",
+        "reality": {
+          "enabled": true,
+          "handshake": {
+            "server": "memory-mcp.net",
+            "server_port": 443
+          },
+          "private_key": "REPLACE_WITH_PRIVATE_KEY",
+          "short_id": ["REPLACE_WITH_SHORT_ID"]
+        }
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    }
+  ]
+}

@@ -58,6 +58,22 @@ services:
     networks:
       - zen-network
 
+  # sing-box VPN Server
+  singbox:
+    image: ghcr.io/sagernet/sing-box:latest
+    container_name: zen-singbox
+    restart: unless-stopped
+    ports:
+      - "${REALITY_PORT:-8443}:8443"      # VLESS+REALITY
+      - "${HYSTERIA_PORT:-8444}:8444/udp" # Hysteria2
+    volumes:
+      - ./singbox:/etc/sing-box
+    command: ["run", "-c", "/etc/sing-box/config.json"]
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - zen-network
+
 volumes:
   postgres_data:
 

@@ -75,6 +75,7 @@ func main() {
 	inboundHandler := handlers.NewInboundHandler(db)
 	statsHandler := handlers.NewStatsHandler(db)
 	dashboardHandler := handlers.NewDashboardHandler(db)
+	publicHandler := handlers.NewPublicHandler(db)
 
 	// === Публичные маршруты ===
 	api := app.Group("/api")
@@ -91,10 +92,10 @@ func main() {
 	auth := api.Group("/auth")
 	auth.Post("/login", authHandler.Login)
 
-	// Subscription routes (публичные - для юзеров)
+	// Public pages (для юзеров - без авторизации)
 	sub := api.Group("/sub")
-	sub.Get("/:uuid", userHandler.GetPublicSubscription)
-	sub.Get("/:uuid/config", userHandler.GetPublicConfig)
+	sub.Get("/:uuid", publicHandler.UserConfigPage)      // Красивая HTML страница
+	sub.Get("/:uuid/raw", publicHandler.RawSubscription) // Raw для приложений
 
 	// === Защищённые маршруты ===
 	protected := api.Group("", middleware.JWTMiddleware())

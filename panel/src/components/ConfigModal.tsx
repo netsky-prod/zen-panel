@@ -43,10 +43,10 @@ export default function ConfigModal({
 
   const currentUrl = config.share_urls?.[selectedUrl]?.url || config.share_url
 
-  // Build subscription URL (public endpoint)
+  // Build subscription URLs (public endpoints)
   const baseUrl = window.location.origin.replace(':3000', ':8080')
-  const subscriptionUrl = userUUID ? `${baseUrl}/api/sub/${userUUID}` : null
-  const configUrl = userUUID ? `${baseUrl}/api/sub/${userUUID}/config` : null
+  const publicPageUrl = userUUID ? `${baseUrl}/api/sub/${userUUID}` : null
+  const rawSubscriptionUrl = userUUID ? `${baseUrl}/api/sub/${userUUID}/raw` : null
 
   return (
     <Modal
@@ -76,27 +76,35 @@ export default function ConfigModal({
       {/* Content */}
       {activeTab === 'subscription' && (
         <div className="space-y-4">
-          <div className="rounded-lg bg-dark-800 p-4">
+          <div className="rounded-lg bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/30 p-4">
             <h3 className="text-sm font-medium text-white mb-2 flex items-center gap-2">
-              <Link className="h-4 w-4 text-blue-400" />
-              Subscription URL (for apps)
+              <ExternalLink className="h-4 w-4 text-blue-400" />
+              Public Page (send to user)
             </h3>
             <p className="text-xs text-dark-400 mb-3">
-              Send this link to user. Works with Shadowrocket, v2rayNG, Clash, etc.
+              User opens this link and sees QR code, URL, subscription - everything they need
             </p>
-            {subscriptionUrl ? (
+            {publicPageUrl ? (
               <div className="flex gap-2">
                 <input
                   readOnly
-                  value={subscriptionUrl}
-                  className="input flex-1 font-mono text-xs"
+                  value={publicPageUrl}
+                  className="input flex-1 font-mono text-xs bg-dark-900"
                 />
                 <button
-                  onClick={() => copyToClipboard(subscriptionUrl, 'sub')}
+                  onClick={() => copyToClipboard(publicPageUrl, 'page')}
+                  className="btn-primary btn-sm"
+                >
+                  {copied === 'page' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </button>
+                <a
+                  href={publicPageUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="btn-secondary btn-sm"
                 >
-                  {copied === 'sub' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                </button>
+                  <ExternalLink className="h-4 w-4" />
+                </a>
               </div>
             ) : (
               <p className="text-dark-500 text-sm">UUID not available</p>
@@ -105,35 +113,29 @@ export default function ConfigModal({
 
           <div className="rounded-lg bg-dark-800 p-4">
             <h3 className="text-sm font-medium text-white mb-2 flex items-center gap-2">
-              <ExternalLink className="h-4 w-4 text-green-400" />
-              sing-box Config URL
+              <Link className="h-4 w-4 text-green-400" />
+              Raw Subscription (for apps)
             </h3>
             <p className="text-xs text-dark-400 mb-3">
-              Direct JSON config for sing-box clients
+              Direct import URL for v2rayNG, Shadowrocket, Clash, NekoBox
             </p>
-            {configUrl ? (
+            {rawSubscriptionUrl ? (
               <div className="flex gap-2">
                 <input
                   readOnly
-                  value={configUrl}
+                  value={rawSubscriptionUrl}
                   className="input flex-1 font-mono text-xs"
                 />
                 <button
-                  onClick={() => copyToClipboard(configUrl, 'config')}
+                  onClick={() => copyToClipboard(rawSubscriptionUrl, 'raw')}
                   className="btn-secondary btn-sm"
                 >
-                  {copied === 'config' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied === 'raw' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </button>
               </div>
             ) : (
               <p className="text-dark-500 text-sm">UUID not available</p>
             )}
-          </div>
-
-          <div className="rounded-lg bg-blue-900/30 border border-blue-700/50 p-4">
-            <p className="text-sm text-blue-200">
-              <strong>Tip:</strong> Send the Subscription URL to users. They can add it to their VPN app and it will auto-update when you change server settings.
-            </p>
           </div>
         </div>
       )}

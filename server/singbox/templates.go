@@ -9,9 +9,15 @@ import (
 
 // ServerConfig - конфигурация sing-box сервера
 type ServerConfig struct {
-	Log       LogConfig       `json:"log"`
-	Inbounds  []interface{}   `json:"inbounds"`
+	Log       LogConfig        `json:"log"`
+	Inbounds  []interface{}    `json:"inbounds"`
 	Outbounds []OutboundConfig `json:"outbounds"`
+	Route     *RouteConfig     `json:"route,omitempty"`
+}
+
+// RouteConfig - настройки маршрутизации
+type RouteConfig struct {
+	Final string `json:"final"`
 }
 
 // LogConfig - настройки логирования
@@ -236,6 +242,9 @@ func (g *TemplateGenerator) GenerateServerConfig(inbounds []models.Inbound, user
 		Outbounds: []OutboundConfig{
 			{Type: "direct", Tag: "direct"},
 			{Type: "block", Tag: "block"},
+		},
+		Route: &RouteConfig{
+			Final: "direct",
 		},
 	}
 

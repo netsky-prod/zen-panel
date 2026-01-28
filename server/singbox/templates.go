@@ -123,13 +123,17 @@ func (g *TemplateGenerator) GenerateVLESSRealityInbound(inbound *models.Inbound,
 		}
 	}
 
-	fallbackAddr := inbound.FallbackAddr
-	if fallbackAddr == "" {
-		fallbackAddr = "127.0.0.1"
+	// Для REALITY handshake должен идти на реальный сервер с SNI доменом
+	// Это делает TLS handshake неотличимым от настоящего для DPI
+	handshakeServer := inbound.SNI
+	handshakePort := 443
+
+	// Если явно указан fallback (для кастомных настроек), используем его
+	if inbound.FallbackAddr != "" && inbound.FallbackAddr != "127.0.0.1" {
+		handshakeServer = inbound.FallbackAddr
 	}
-	fallbackPort := inbound.FallbackPort
-	if fallbackPort == 0 {
-		fallbackPort = 8443
+	if inbound.FallbackPort != 0 && inbound.FallbackPort != 8443 {
+		handshakePort = inbound.FallbackPort
 	}
 
 	return &VLESSRealityInbound{
@@ -144,8 +148,8 @@ func (g *TemplateGenerator) GenerateVLESSRealityInbound(inbound *models.Inbound,
 			Reality: RealityConfig{
 				Enabled: true,
 				Handshake: HandshakeConfig{
-					Server:     fallbackAddr,
-					ServerPort: fallbackPort,
+					Server:     handshakeServer,
+					ServerPort: handshakePort,
 				},
 				PrivateKey: inbound.PrivateKey,
 				ShortID:    []string{inbound.ShortID},

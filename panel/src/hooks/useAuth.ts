@@ -21,7 +21,8 @@ export const useAuth = create<AuthState>()(
       user: null,
       token: null,
       isAuthenticated: false,
-      isLoading: false,
+      // Start with isLoading: true so ProtectedRoute shows spinner until checkAuth completes
+      isLoading: typeof window !== 'undefined' && !!localStorage.getItem('token'),
       error: null,
 
       login: async (credentials: LoginCredentials) => {
@@ -51,7 +52,7 @@ export const useAuth = create<AuthState>()(
       checkAuth: async () => {
         const token = localStorage.getItem('token')
         if (!token) {
-          set({ isAuthenticated: false, user: null })
+          set({ isAuthenticated: false, user: null, isLoading: false })
           return
         }
 

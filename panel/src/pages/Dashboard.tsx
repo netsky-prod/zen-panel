@@ -61,7 +61,7 @@ export default function Dashboard() {
 
   if (!data) return null
 
-  const { stats, nodes, traffic_chart } = data
+  const { users, traffic, node_status } = data
 
   return (
     <div className="space-y-6">
@@ -74,23 +74,23 @@ export default function Dashboard() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Users"
-          value={stats.total_users}
+          value={users.total}
           icon={<Users className="h-6 w-6 text-blue-500" />}
         />
         <StatCard
           title="Active Users"
-          value={stats.active_users}
+          value={users.active}
           icon={<Activity className="h-6 w-6 text-green-500" />}
           subtitle="Enabled & not expired"
         />
         <StatCard
           title="Upload"
-          value={formatBytes(stats.total_upload)}
+          value={formatBytes(traffic.total_upload)}
           icon={<Upload className="h-6 w-6 text-purple-500" />}
         />
         <StatCard
           title="Download"
-          value={formatBytes(stats.total_download)}
+          value={formatBytes(traffic.total_download)}
           icon={<Download className="h-6 w-6 text-cyan-500" />}
         />
       </div>
@@ -99,7 +99,7 @@ export default function Dashboard() {
       <div className="card">
         <h2 className="mb-4 text-lg font-semibold text-white">Nodes Status</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {nodes.map((node) => (
+          {node_status.map((node) => (
             <div
               key={node.id}
               className="flex items-center gap-4 rounded-lg border border-dark-700 bg-dark-800 p-4"
@@ -114,12 +114,12 @@ export default function Dashboard() {
                 </div>
                 <p className="mt-1 text-sm text-dark-400">{node.address}</p>
                 <p className="text-xs text-dark-500">
-                  {node.users_count} users / {node.inbounds_count} inbounds
+                  {node.user_count} users / {node.inbound_count} inbounds
                 </p>
               </div>
             </div>
           ))}
-          {nodes.length === 0 && (
+          {node_status.length === 0 && (
             <div className="col-span-full py-8 text-center text-dark-400">
               No nodes configured yet
             </div>
@@ -132,7 +132,7 @@ export default function Dashboard() {
         <h2 className="mb-4 text-lg font-semibold text-white">
           Traffic (Last 7 Days)
         </h2>
-        {traffic_chart && traffic_chart.length > 0 ? (
+        {traffic.weekly_history && traffic.weekly_history.length > 0 ? (
           <>
             <div className="mb-4 flex items-center gap-6">
               <div className="flex items-center gap-2">
@@ -144,7 +144,7 @@ export default function Dashboard() {
                 <span className="text-sm text-dark-400">Download</span>
               </div>
             </div>
-            <StatsChart data={traffic_chart} />
+            <StatsChart data={traffic.weekly_history} />
           </>
         ) : (
           <div className="flex h-64 items-center justify-center text-dark-400">

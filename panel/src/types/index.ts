@@ -54,18 +54,35 @@ export interface TrafficStats {
   recorded_at: string
 }
 
-export interface Stats {
-  total_users: number
-  active_users: number
-  total_traffic: number
-  total_upload: number
-  total_download: number
+export interface DashboardData {
+  users: {
+    total: number
+    active: number
+    disabled: number
+    expired: number
+  }
+  nodes: {
+    total: number
+    online: number
+    offline: number
+    disabled: number
+  }
+  traffic: {
+    total_upload: number
+    total_download: number
+    today_upload: number
+    today_download: number
+    weekly_history: TrafficChartData[]
+  }
+  recent_users: RecentUser[]
+  node_status: NodeStatus[]
 }
 
-export interface DashboardData {
-  stats: Stats
-  nodes: NodeStatus[]
-  traffic_chart: TrafficChartData[]
+export interface RecentUser {
+  id: number
+  name: string
+  enabled: boolean
+  created_at: string
 }
 
 export interface NodeStatus {
@@ -73,8 +90,8 @@ export interface NodeStatus {
   name: string
   address: string
   online: boolean
-  users_count: number
-  inbounds_count: number
+  inbound_count: number
+  user_count: number
 }
 
 export interface TrafficChartData {

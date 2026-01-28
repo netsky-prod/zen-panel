@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Copy, Check } from 'lucide-react'
+import { Copy, Check, Link, ExternalLink } from 'lucide-react'
 import Modal from './Modal'
 import QRCode from './QRCode'
 import type { UserConfig } from '../types'
@@ -10,35 +10,43 @@ interface ConfigModalProps {
   onClose: () => void
   config: UserConfig | null
   userName: string
+  userUUID?: string
 }
 
-type TabType = 'singbox' | 'url' | 'qr'
+type TabType = 'subscription' | 'url' | 'qr' | 'singbox'
 
 export default function ConfigModal({
   isOpen,
   onClose,
   config,
   userName,
+  userUUID,
 }: ConfigModalProps) {
-  const [activeTab, setActiveTab] = useState<TabType>('singbox')
-  const [copied, setCopied] = useState(false)
+  const [activeTab, setActiveTab] = useState<TabType>('subscription')
+  const [copied, setCopied] = useState<string | null>(null)
   const [selectedUrl, setSelectedUrl] = useState(0)
 
-  const copyToClipboard = async (text: string) => {
+  const copyToClipboard = async (text: string, key: string) => {
     await navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    setCopied(key)
+    setTimeout(() => setCopied(null), 2000)
   }
 
   if (!config) return null
 
   const tabs: { id: TabType; label: string }[] = [
-    { id: 'singbox', label: 'sing-box JSON' },
+    { id: 'subscription', label: 'Subscription' },
     { id: 'url', label: 'Share URL' },
     { id: 'qr', label: 'QR Code' },
+    { id: 'singbox', label: 'sing-box JSON' },
   ]
 
   const currentUrl = config.share_urls?.[selectedUrl]?.url || config.share_url
+
+  // Build subscription URL (public endpoint)
+  const baseUrl = window.location.origin.replace(':3000', ':8080')
+  const subscriptionUrl = userUUID ? `${baseUrl}/api/sub/${userUUID}` : null
+  const configUrl = userUUID ? `${baseUrl}/api/sub/${userUUID}/config` : null
 
   return (
     <Modal
@@ -66,27 +74,67 @@ export default function ConfigModal({
       </div>
 
       {/* Content */}
-      {activeTab === 'singbox' && (
-        <div className="relative">
-          <pre className="max-h-96 overflow-auto rounded-lg bg-dark-800 p-4 text-sm text-dark-200">
-            {JSON.stringify(config.singbox, null, 2)}
-          </pre>
-          <button
-            onClick={() => copyToClipboard(JSON.stringify(config.singbox, null, 2))}
-            className="absolute right-2 top-2 btn-secondary btn-sm"
-          >
-            {copied ? (
-              <>
-                <Check className="h-4 w-4" />
-                Copied
-              </>
+      {activeTab === 'subscription' && (
+        <div className="space-y-4">
+          <div className="rounded-lg bg-dark-800 p-4">
+            <h3 className="text-sm font-medium text-white mb-2 flex items-center gap-2">
+              <Link className="h-4 w-4 text-blue-400" />
+              Subscription URL (for apps)
+            </h3>
+            <p className="text-xs text-dark-400 mb-3">
+              Send this link to user. Works with Shadowrocket, v2rayNG, Clash, etc.
+            </p>
+            {subscriptionUrl ? (
+              <div className="flex gap-2">
+                <input
+                  readOnly
+                  value={subscriptionUrl}
+                  className="input flex-1 font-mono text-xs"
+                />
+                <button
+                  onClick={() => copyToClipboard(subscriptionUrl, 'sub')}
+                  className="btn-secondary btn-sm"
+                >
+                  {copied === 'sub' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </button>
+              </div>
             ) : (
-              <>
-                <Copy className="h-4 w-4" />
-                Copy
-              </>
+              <p className="text-dark-500 text-sm">UUID not available</p>
             )}
-          </button>
+          </div>
+
+          <div className="rounded-lg bg-dark-800 p-4">
+            <h3 className="text-sm font-medium text-white mb-2 flex items-center gap-2">
+              <ExternalLink className="h-4 w-4 text-green-400" />
+              sing-box Config URL
+            </h3>
+            <p className="text-xs text-dark-400 mb-3">
+              Direct JSON config for sing-box clients
+            </p>
+            {configUrl ? (
+              <div className="flex gap-2">
+                <input
+                  readOnly
+                  value={configUrl}
+                  className="input flex-1 font-mono text-xs"
+                />
+                <button
+                  onClick={() => copyToClipboard(configUrl, 'config')}
+                  className="btn-secondary btn-sm"
+                >
+                  {copied === 'config' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </button>
+              </div>
+            ) : (
+              <p className="text-dark-500 text-sm">UUID not available</p>
+            )}
+          </div>
+
+          <div className="rounded-lg bg-blue-900/30 border border-blue-700/50 p-4">
+            <p className="text-sm text-blue-200">
+              <strong>Tip:</strong> Send the Subscription URL to users. They can add it to their VPN app and it will auto-update when you change server settings.
+            </p>
+          </div>
         </div>
       )}
 
@@ -115,10 +163,10 @@ export default function ConfigModal({
               className="input h-32 resize-none font-mono text-xs"
             />
             <button
-              onClick={() => copyToClipboard(currentUrl)}
+              onClick={() => copyToClipboard(currentUrl, 'url')}
               className="absolute right-2 top-2 btn-secondary btn-sm"
             >
-              {copied ? (
+              {copied === 'url' ? (
                 <>
                   <Check className="h-4 w-4" />
                   Copied
@@ -131,6 +179,9 @@ export default function ConfigModal({
               )}
             </button>
           </div>
+          <p className="text-xs text-dark-400">
+            This is a direct vless:// or hysteria2:// URL for importing into VPN clients
+          </p>
         </div>
       )}
 
@@ -158,6 +209,30 @@ export default function ConfigModal({
           <p className="text-center text-sm text-dark-400">
             Scan this QR code with your VPN client
           </p>
+        </div>
+      )}
+
+      {activeTab === 'singbox' && (
+        <div className="relative">
+          <pre className="max-h-96 overflow-auto rounded-lg bg-dark-800 p-4 text-sm text-dark-200">
+            {JSON.stringify(config.singbox, null, 2)}
+          </pre>
+          <button
+            onClick={() => copyToClipboard(JSON.stringify(config.singbox, null, 2), 'json')}
+            className="absolute right-2 top-2 btn-secondary btn-sm"
+          >
+            {copied === 'json' ? (
+              <>
+                <Check className="h-4 w-4" />
+                Copied
+              </>
+            ) : (
+              <>
+                <Copy className="h-4 w-4" />
+                Copy
+              </>
+            )}
+          </button>
         </div>
       )}
     </Modal>

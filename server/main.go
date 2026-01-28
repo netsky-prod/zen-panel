@@ -91,6 +91,11 @@ func main() {
 	auth := api.Group("/auth")
 	auth.Post("/login", authHandler.Login)
 
+	// Subscription routes (публичные - для юзеров)
+	sub := api.Group("/sub")
+	sub.Get("/:uuid", userHandler.GetPublicSubscription)
+	sub.Get("/:uuid/config", userHandler.GetPublicConfig)
+
 	// === Защищённые маршруты ===
 	protected := api.Group("", middleware.JWTMiddleware())
 

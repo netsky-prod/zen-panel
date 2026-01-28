@@ -340,6 +340,7 @@ export default function Users() {
         }}
         config={userConfig}
         userName={configUser?.name || ''}
+        userUUID={configUser?.uuid}
       />
     </div>
   )

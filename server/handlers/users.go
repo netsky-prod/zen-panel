@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -497,6 +498,69 @@ func (h *UserHandler) ResetUUID(c *fiber.Ctx) error {
 		},
 		"message": "UUID успешно сброшен. Не забудьте синхронизировать конфиги на нодах.",
 	})
+}
+
+// GetPublicSubscription - GET /api/sub/:uuid
+// Публичная подписка (без авторизации) - для юзеров
+func (h *UserHandler) GetPublicSubscription(c *fiber.Ctx) error {
+	userUUID := c.Params("uuid")
+	if userUUID == "" {
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid UUID")
+	}
+
+	var user models.User
+	if err := h.db.Preload("Inbounds.Node").Where("uuid = ?", userUUID).First(&user).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).SendString("User not found")
+	}
+
+	if !user.Enabled {
+		return c.Status(fiber.StatusForbidden).SendString("User disabled")
+	}
+
+	if len(user.Inbounds) == 0 {
+		return c.Status(fiber.StatusNotFound).SendString("No inbounds")
+	}
+
+	// Генерируем subscription
+	subscription, err := h.configGen.GenerateSubscription(&user, user.Inbounds)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Error generating subscription")
+	}
+
+	c.Set("Content-Type", "text/plain; charset=utf-8")
+	c.Set("Content-Disposition", "attachment; filename=subscription.txt")
+	c.Set("Profile-Update-Interval", "12")
+	c.Set("Subscription-Userinfo", fmt.Sprintf("upload=%d; download=%d; total=%d", 0, user.DataUsed, user.DataLimit))
+	return c.SendString(subscription)
+}
+
+// GetPublicConfig - GET /api/sub/:uuid/config
+// Публичный sing-box конфиг (без авторизации)
+func (h *UserHandler) GetPublicConfig(c *fiber.Ctx) error {
+	userUUID := c.Params("uuid")
+	if userUUID == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid UUID"})
+	}
+
+	var user models.User
+	if err := h.db.Preload("Inbounds.Node").Where("uuid = ?", userUUID).First(&user).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "User not found"})
+	}
+
+	if !user.Enabled {
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{"error": "User disabled"})
+	}
+
+	if len(user.Inbounds) == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "No inbounds"})
+	}
+
+	config, err := h.configGen.GenerateSingboxConfig(&user, user.Inbounds)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Error generating config"})
+	}
+
+	return c.JSON(config)
 }
 
 // ResetTraffic - POST /api/users/:id/reset-traffic

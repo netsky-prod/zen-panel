@@ -30,7 +30,11 @@ services:
     ports:
       - "${API_PORT:-8080}:8080"
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-zen}:${POSTGRES_PASSWORD:-zenpassword}@postgres:5432/${POSTGRES_DB:-zen_vpn}?sslmode=disable
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${POSTGRES_USER:-zen}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-zenpassword}
+      DB_NAME: ${POSTGRES_DB:-zen_vpn}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}

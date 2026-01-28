@@ -19,6 +19,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import UserForm from '../components/UserForm'
 import ConfigModal from '../components/ConfigModal'
 import StatusBadge from '../components/StatusBadge'
+import Dropdown, { DropdownItem, DropdownDivider } from '../components/Dropdown'
 import type { User, CreateUserInput, UserConfig } from '../types'
 
 function formatBytes(bytes: number): string {
@@ -50,7 +51,6 @@ export default function Users() {
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
   const [configUser, setConfigUser] = useState<User | null>(null)
   const [userConfig, setUserConfig] = useState<UserConfig | null>(null)
-  const [actionMenuUser, setActionMenuUser] = useState<number | null>(null)
 
   const queryClient = useQueryClient()
   const addToast = useToast((state) => state.addToast)
@@ -229,101 +229,56 @@ export default function Users() {
                 </td>
                 <td className="text-dark-300">{formatDate(user.expires_at)}</td>
                 <td>
-                  <div className="relative">
-                    <button
-                      onClick={() =>
-                        setActionMenuUser(actionMenuUser === user.id ? null : user.id)
-                      }
-                      className="btn-ghost btn-sm"
+                  <Dropdown
+                    trigger={
+                      <button className="btn-ghost btn-sm">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
+                    }
+                  >
+                    <DropdownItem onClick={() => handleGetConfig(user)}>
+                      <QrCode className="h-4 w-4" />
+                      Get Config
+                    </DropdownItem>
+                    <DropdownItem onClick={() => setEditingUser(user)}>
+                      <Edit className="h-4 w-4" />
+                      Edit
+                    </DropdownItem>
+                    <DropdownItem
+                      onClick={() => {
+                        if (user.enabled) {
+                          disableMutation.mutate(user.id)
+                        } else {
+                          enableMutation.mutate(user.id)
+                        }
+                      }}
                     >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </button>
-
-                    {actionMenuUser === user.id && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-10"
-                          onClick={() => setActionMenuUser(null)}
-                        />
-                        <div className="absolute right-0 z-20 mt-2 w-48 rounded-lg border border-dark-700 bg-dark-800 py-1 shadow-lg">
-                          <button
-                            onClick={() => {
-                              handleGetConfig(user)
-                              setActionMenuUser(null)
-                            }}
-                            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-dark-200 hover:bg-dark-700"
-                          >
-                            <QrCode className="h-4 w-4" />
-                            Get Config
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditingUser(user)
-                              setActionMenuUser(null)
-                            }}
-                            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-dark-200 hover:bg-dark-700"
-                          >
-                            <Edit className="h-4 w-4" />
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (user.enabled) {
-                                disableMutation.mutate(user.id)
-                              } else {
-                                enableMutation.mutate(user.id)
-                              }
-                              setActionMenuUser(null)
-                            }}
-                            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-dark-200 hover:bg-dark-700"
-                          >
-                            {user.enabled ? (
-                              <>
-                                <PowerOff className="h-4 w-4" />
-                                Disable
-                              </>
-                            ) : (
-                              <>
-                                <Power className="h-4 w-4" />
-                                Enable
-                              </>
-                            )}
-                          </button>
-                          <button
-                            onClick={() => {
-                              resetUUIDMutation.mutate(user.id)
-                              setActionMenuUser(null)
-                            }}
-                            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-dark-200 hover:bg-dark-700"
-                          >
-                            <Key className="h-4 w-4" />
-                            Reset UUID
-                          </button>
-                          <button
-                            onClick={() => {
-                              resetTrafficMutation.mutate(user.id)
-                              setActionMenuUser(null)
-                            }}
-                            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-dark-200 hover:bg-dark-700"
-                          >
-                            <RefreshCw className="h-4 w-4" />
-                            Reset Traffic
-                          </button>
-                          <hr className="my-1 border-dark-700" />
-                          <button
-                            onClick={() => {
-                              setDeletingUser(user)
-                              setActionMenuUser(null)
-                            }}
-                            className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-dark-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Delete
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                      {user.enabled ? (
+                        <>
+                          <PowerOff className="h-4 w-4" />
+                          Disable
+                        </>
+                      ) : (
+                        <>
+                          <Power className="h-4 w-4" />
+                          Enable
+                        </>
+                      )}
+                    </DropdownItem>
+                    <DropdownItem onClick={() => resetUUIDMutation.mutate(user.id)}>
+                      <Key className="h-4 w-4" />
+                      Reset UUID
+                    </DropdownItem>
+                    <DropdownItem onClick={() => resetTrafficMutation.mutate(user.id)}>
+                      <RefreshCw className="h-4 w-4" />
+                      Reset Traffic
+                    </DropdownItem>
+                    <DropdownDivider />
+                    <DropdownItem variant="danger" onClick={() => setDeletingUser(user)}>
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </DropdownItem>
+                  </Dropdown>
                 </td>
               </tr>
             ))}

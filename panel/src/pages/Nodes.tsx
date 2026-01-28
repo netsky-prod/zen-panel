@@ -19,6 +19,7 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import NodeForm from '../components/NodeForm'
 import InboundForm from '../components/InboundForm'
 import StatusBadge from '../components/StatusBadge'
+import Dropdown, { DropdownItem, DropdownDivider } from '../components/Dropdown'
 import type { Node, Inbound, CreateNodeInput, CreateInboundInput } from '../types'
 
 export default function Nodes() {
@@ -34,9 +35,6 @@ export default function Nodes() {
   const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null)
   const [editingInbound, setEditingInbound] = useState<Inbound | null>(null)
   const [deletingInbound, setDeletingInbound] = useState<Inbound | null>(null)
-
-  const [actionMenuNode, setActionMenuNode] = useState<number | null>(null)
-  const [actionMenuInbound, setActionMenuInbound] = useState<number | null>(null)
 
   const queryClient = useQueryClient()
   const addToast = useToast((state) => state.addToast)
@@ -222,69 +220,36 @@ export default function Nodes() {
                 </p>
               </div>
 
-              <div className="relative">
-                <button
-                  onClick={() =>
-                    setActionMenuNode(actionMenuNode === node.id ? null : node.id)
-                  }
-                  className="btn-ghost btn-sm"
+              <Dropdown
+                trigger={
+                  <button className="btn-ghost btn-sm">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </button>
+                }
+              >
+                <DropdownItem onClick={() => syncNodeMutation.mutate(node.id)}>
+                  <RefreshCw className="h-4 w-4" />
+                  Sync Config
+                </DropdownItem>
+                <DropdownItem
+                  onClick={() => {
+                    setSelectedNodeId(node.id)
+                    setIsInboundFormOpen(true)
+                  }}
                 >
-                  <MoreHorizontal className="h-4 w-4" />
-                </button>
-
-                {actionMenuNode === node.id && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-10"
-                      onClick={() => setActionMenuNode(null)}
-                    />
-                    <div className="absolute right-0 z-20 mt-2 w-48 rounded-lg border border-dark-700 bg-dark-800 py-1 shadow-lg">
-                      <button
-                        onClick={() => {
-                          syncNodeMutation.mutate(node.id)
-                          setActionMenuNode(null)
-                        }}
-                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-dark-200 hover:bg-dark-700"
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                        Sync Config
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedNodeId(node.id)
-                          setIsInboundFormOpen(true)
-                          setActionMenuNode(null)
-                        }}
-                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-dark-200 hover:bg-dark-700"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Inbound
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingNode(node)
-                          setActionMenuNode(null)
-                        }}
-                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-dark-200 hover:bg-dark-700"
-                      >
-                        <Edit className="h-4 w-4" />
-                        Edit Node
-                      </button>
-                      <hr className="my-1 border-dark-700" />
-                      <button
-                        onClick={() => {
-                          setDeletingNode(node)
-                          setActionMenuNode(null)
-                        }}
-                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-dark-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete Node
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
+                  <Plus className="h-4 w-4" />
+                  Add Inbound
+                </DropdownItem>
+                <DropdownItem onClick={() => setEditingNode(node)}>
+                  <Edit className="h-4 w-4" />
+                  Edit Node
+                </DropdownItem>
+                <DropdownDivider />
+                <DropdownItem variant="danger" onClick={() => setDeletingNode(node)}>
+                  <Trash2 className="h-4 w-4" />
+                  Delete Node
+                </DropdownItem>
+              </Dropdown>
             </div>
 
             {/* Inbounds List */}
@@ -333,52 +298,30 @@ export default function Nodes() {
                               {inbound.sni && ` / SNI: ${inbound.sni}`}
                             </p>
                           </div>
-                          <div className="relative">
-                            <button
-                              onClick={() =>
-                                setActionMenuInbound(
-                                  actionMenuInbound === inbound.id
-                                    ? null
-                                    : inbound.id
-                                )
-                              }
-                              className="btn-ghost btn-sm"
+                          <Dropdown
+                            trigger={
+                              <button className="btn-ghost btn-sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </button>
+                            }
+                          >
+                            <DropdownItem
+                              onClick={() => {
+                                setEditingInbound(inbound)
+                                setSelectedNodeId(node.id)
+                              }}
                             >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </button>
-
-                            {actionMenuInbound === inbound.id && (
-                              <>
-                                <div
-                                  className="fixed inset-0 z-10"
-                                  onClick={() => setActionMenuInbound(null)}
-                                />
-                                <div className="absolute right-0 z-20 mt-2 w-40 rounded-lg border border-dark-700 bg-dark-800 py-1 shadow-lg">
-                                  <button
-                                    onClick={() => {
-                                      setEditingInbound(inbound)
-                                      setSelectedNodeId(node.id)
-                                      setActionMenuInbound(null)
-                                    }}
-                                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-dark-200 hover:bg-dark-700"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                    Edit
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      setDeletingInbound(inbound)
-                                      setActionMenuInbound(null)
-                                    }}
-                                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-dark-700"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                    Delete
-                                  </button>
-                                </div>
-                              </>
-                            )}
-                          </div>
+                              <Edit className="h-4 w-4" />
+                              Edit
+                            </DropdownItem>
+                            <DropdownItem
+                              variant="danger"
+                              onClick={() => setDeletingInbound(inbound)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </DropdownItem>
+                          </Dropdown>
                         </div>
                       ))}
                     </div>

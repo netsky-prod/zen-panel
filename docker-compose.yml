@@ -67,14 +67,34 @@ services:
       - "${REALITY_PORT:-8443}:8443"      # VLESS+REALITY
       - "${HYSTERIA_PORT:-8444}:8444/udp" # Hysteria2
     volumes:
-      - ./singbox:/etc/sing-box
+      - singbox_config:/etc/sing-box
     command: ["run", "-c", "/etc/sing-box/config.json"]
     cap_add:
       - NET_ADMIN
     networks:
       - zen-network
 
+  # Node Agent - manages sing-box config
+  node-agent:
+    build:
+      context: ./node-agent
+      dockerfile: Dockerfile
+    container_name: zen-node-agent
+    restart: unless-stopped
+    environment:
+      CONFIG_PATH: /etc/sing-box/config.json
+      API_TOKEN: ${NODE_API_TOKEN:-secret-node-token}
+      LISTEN_ADDR: ":8880"
+    volumes:
+      - singbox_config:/etc/sing-box
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - singbox
+    networks:
+      - zen-network
+
 volumes:
+  singbox_config:
   postgres_data:
 
 networks:

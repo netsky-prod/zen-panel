@@ -1,0 +1,80 @@
+version: "3.8"
+
+services:
+  # Node Agent - manages sing-box configuration and lifecycle
+  agent:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: node-agent
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    environment:
+      - API_TOKEN=${API_TOKEN}
+      - SINGBOX_CONFIG=/etc/sing-box/config.json
+      - SINGBOX_API=http://127.0.0.1:10085
+      - LISTEN_ADDR=:9090
+    volumes:
+      - ./singbox:/etc/sing-box
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - vpn-network
+    depends_on:
+      - singbox
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/health", "-O", "/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Sing-box - the VPN proxy server
+  singbox:
+    image: ghcr.io/sagernet/sing-box:latest
+    container_name: singbox
+    restart: unless-stopped
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_BIND_SERVICE
+    volumes:
+      - ./singbox:/etc/sing-box:ro
+      - ./singbox/cert.pem:/etc/sing-box/cert.pem:ro
+      - ./singbox/key.pem:/etc/sing-box/key.pem:ro
+    command: run -c /etc/sing-box/config.json
+    healthcheck:
+      test: ["CMD", "sing-box", "check", "-c", "/etc/sing-box/config.json"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Caddy - fallback web server for REALITY protocol
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy-fallback
+    restart: unless-stopped
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/index.html:/var/www/html/index.html:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - vpn-network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "https://localhost:8443", "--no-check-certificate", "-O", "/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  vpn-network:
+    driver: bridge
+
+volumes:
+  caddy-data:
+  caddy-config:

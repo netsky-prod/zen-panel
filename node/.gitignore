@@ -1,0 +1,24 @@
+# Environment files
+.env
+
+# Certificates
+singbox/*.pem
+singbox/cert.pem
+singbox/key.pem
+
+# Runtime data
+caddy-data/
+caddy-config/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

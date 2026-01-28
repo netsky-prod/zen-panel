@@ -1,0 +1,31 @@
+# Environment
+.env
+*.env.local
+
+# Database
+*.db
+postgres_data/
+
+# Build artifacts
+server/zen-admin
+server/tmp/
+panel/dist/
+panel/node_modules/
+node/agent/agent
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Docker
+docker-compose.override.yml

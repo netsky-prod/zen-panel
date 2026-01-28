@@ -1,0 +1,48 @@
+# Caddy fallback web server configuration
+# This serves as a decoy website for REALITY protocol fallback
+
+{
+    # Global options
+    admin off
+    auto_https off
+
+    # Logging
+    log {
+        output stdout
+        format console
+        level INFO
+    }
+}
+
+# Listen on internal port 8443 with self-signed TLS
+# sing-box handles the real TLS termination and forwards non-VPN traffic here
+:8443 {
+    # Enable TLS with self-signed certificate
+    tls internal
+
+    # Set response headers for security
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy strict-origin-when-cross-origin
+        -Server
+    }
+
+    # Serve static files from /var/www/html
+    root * /var/www/html
+
+    # Enable file server
+    file_server
+
+    # Handle 404s gracefully
+    handle_errors {
+        respond "{http.error.status_code} {http.error.status_text}"
+    }
+
+    # Basic logging for requests
+    log {
+        output stdout
+        format console
+    }
+}

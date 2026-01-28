@@ -54,14 +54,22 @@ client.interceptors.response.use(
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<{ token: string; user: AuthUser }> => {
     const { data } = await client.post('/auth/login', credentials)
-    return data
+    // API returns { success: true, data: { token, admin: { id, username } } }
+    return {
+      token: data.data.token,
+      user: {
+        id: data.data.admin.id,
+        username: data.data.admin.username,
+      },
+    }
   },
   logout: async (): Promise<void> => {
     await client.post('/auth/logout')
   },
   me: async (): Promise<AuthUser> => {
     const { data } = await client.get('/auth/me')
-    return data
+    // API returns { success: true, data: { id, username } }
+    return data.data
   },
   changePassword: async (oldPassword: string, newPassword: string): Promise<void> => {
     await client.post('/auth/change-password', { old_password: oldPassword, new_password: newPassword })
@@ -72,42 +80,42 @@ export const authApi = {
 export const usersApi = {
   list: async (): Promise<User[]> => {
     const { data } = await client.get('/users')
-    return data
+    return data.data
   },
   get: async (id: number): Promise<User> => {
     const { data } = await client.get(`/users/${id}`)
-    return data
+    return data.data
   },
   create: async (input: CreateUserInput): Promise<User> => {
     const { data } = await client.post('/users', input)
-    return data
+    return data.data
   },
   update: async ({ id, ...input }: UpdateUserInput): Promise<User> => {
     const { data } = await client.put(`/users/${id}`, input)
-    return data
+    return data.data
   },
   delete: async (id: number): Promise<void> => {
     await client.delete(`/users/${id}`)
   },
   getConfig: async (id: number): Promise<UserConfig> => {
     const { data } = await client.get(`/users/${id}/config`)
-    return data
+    return data.data
   },
   resetUUID: async (id: number): Promise<User> => {
     const { data } = await client.post(`/users/${id}/reset-uuid`)
-    return data
+    return data.data
   },
   resetTraffic: async (id: number): Promise<User> => {
     const { data } = await client.post(`/users/${id}/reset-traffic`)
-    return data
+    return data.data
   },
   enable: async (id: number): Promise<User> => {
     const { data } = await client.put(`/users/${id}`, { enabled: true })
-    return data
+    return data.data
   },
   disable: async (id: number): Promise<User> => {
     const { data } = await client.put(`/users/${id}`, { enabled: false })
-    return data
+    return data.data
   },
 }
 
@@ -115,26 +123,26 @@ export const usersApi = {
 export const nodesApi = {
   list: async (): Promise<Node[]> => {
     const { data } = await client.get('/nodes')
-    return data
+    return data.data
   },
   get: async (id: number): Promise<Node> => {
     const { data } = await client.get(`/nodes/${id}`)
-    return data
+    return data.data
   },
   create: async (input: CreateNodeInput): Promise<Node> => {
     const { data } = await client.post('/nodes', input)
-    return data
+    return data.data
   },
   update: async ({ id, ...input }: UpdateNodeInput): Promise<Node> => {
     const { data } = await client.put(`/nodes/${id}`, input)
-    return data
+    return data.data
   },
   delete: async (id: number): Promise<void> => {
     await client.delete(`/nodes/${id}`)
   },
   getStatus: async (id: number): Promise<{ online: boolean }> => {
     const { data } = await client.get(`/nodes/${id}/status`)
-    return data
+    return data.data
   },
   sync: async (id: number): Promise<void> => {
     await client.post(`/nodes/${id}/sync`)
@@ -145,22 +153,22 @@ export const nodesApi = {
 export const inboundsApi = {
   listByNode: async (nodeId: number): Promise<Inbound[]> => {
     const { data } = await client.get(`/nodes/${nodeId}/inbounds`)
-    return data
+    return data.data
   },
   create: async (input: CreateInboundInput): Promise<Inbound> => {
     const { data } = await client.post(`/nodes/${input.node_id}/inbounds`, input)
-    return data
+    return data.data
   },
   update: async ({ id, ...input }: UpdateInboundInput): Promise<Inbound> => {
     const { data } = await client.put(`/inbounds/${id}`, input)
-    return data
+    return data.data
   },
   delete: async (id: number): Promise<void> => {
     await client.delete(`/inbounds/${id}`)
   },
   generateKeys: async (id: number): Promise<RealityKeys> => {
     const { data } = await client.post(`/inbounds/${id}/generate-keys`)
-    return data
+    return data.data
   },
 }
 
@@ -168,7 +176,7 @@ export const inboundsApi = {
 export const dashboardApi = {
   get: async (): Promise<DashboardData> => {
     const { data } = await client.get('/dashboard')
-    return data
+    return data.data
   },
 }
 
@@ -176,15 +184,15 @@ export const dashboardApi = {
 export const statsApi = {
   getOverall: async () => {
     const { data } = await client.get('/stats')
-    return data
+    return data.data
   },
   getUser: async (userId: number) => {
     const { data } = await client.get(`/stats/users/${userId}`)
-    return data
+    return data.data
   },
   getNode: async (nodeId: number) => {
     const { data } = await client.get(`/stats/nodes/${nodeId}`)
-    return data
+    return data.data
   },
 }
 

@@ -39,6 +39,8 @@ export interface Inbound {
   up_mbps: number
   down_mbps: number
   ws_path: string
+  cert_path: string
+  key_path: string
   fingerprint: string
   enabled: boolean
   created_at: string
@@ -166,6 +168,8 @@ export interface CreateInboundInput {
   up_mbps?: number
   down_mbps?: number
   ws_path?: string
+  cert_path?: string
+  key_path?: string
   fingerprint?: string
   enabled: boolean
 }

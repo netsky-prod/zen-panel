@@ -237,6 +237,16 @@ func (h *InboundHandler) Create(c *fiber.Ctx) error {
 	if inbound.DownMbps == 0 {
 		inbound.DownMbps = 100
 	}
+	if inbound.WSPath == "" {
+		inbound.WSPath = "/ws"
+	}
+	// Дефолтные пути для TLS сертификатов (Let's Encrypt стандартные пути)
+	if inbound.CertPath == "" && (inbound.Protocol == models.ProtocolWSTLS || inbound.Protocol == models.ProtocolHysteria2) {
+		inbound.CertPath = "/etc/ssl/certs/cert.pem"
+	}
+	if inbound.KeyPath == "" && (inbound.Protocol == models.ProtocolWSTLS || inbound.Protocol == models.ProtocolHysteria2) {
+		inbound.KeyPath = "/etc/ssl/private/key.pem"
+	}
 
 	if req.Enabled != nil {
 		inbound.Enabled = *req.Enabled

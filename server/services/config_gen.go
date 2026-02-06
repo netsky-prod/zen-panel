@@ -193,11 +193,17 @@ func (g *ConfigGenerator) generateVLESSWSOutbound(user *models.User, inbound *mo
 		wsPath = "/ws"
 	}
 
+	// Если нет сертификатов на sing-box - TLS на nginx, порт 443
+	port := inbound.ListenPort
+	if inbound.CertPath == "" && inbound.KeyPath == "" {
+		port = 443
+	}
+
 	return map[string]interface{}{
 		"type":        "vless",
 		"tag":         tag,
 		"server":      inbound.Node.Address,
-		"server_port": inbound.ListenPort,
+		"server_port": port,
 		"uuid":        user.UUID.String(),
 		"tls": map[string]interface{}{
 			"enabled":     true,
@@ -280,6 +286,12 @@ func (g *ConfigGenerator) generateVLESSWSURL(user *models.User, inbound *models.
 		wsPath = "/ws"
 	}
 
+	// Если нет сертификатов - значит TLS на nginx, используем порт 443
+	port := inbound.ListenPort
+	if inbound.CertPath == "" && inbound.KeyPath == "" {
+		port = 443
+	}
+
 	params := url.Values{}
 	params.Set("type", "ws")
 	params.Set("security", "tls")
@@ -292,7 +304,7 @@ func (g *ConfigGenerator) generateVLESSWSURL(user *models.User, inbound *models.
 	shareURL := fmt.Sprintf("vless://%s@%s:%d?%s#%s",
 		user.UUID.String(),
 		inbound.Node.Address,
-		inbound.ListenPort,
+		port,
 		params.Encode(),
 		name,
 	)

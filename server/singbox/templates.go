@@ -81,7 +81,7 @@ type VLESSWSInbound struct {
 	Listen    string       `json:"listen"`
 	Port      int          `json:"listen_port"`
 	Users     []VLESSUser  `json:"users"`
-	TLS       StandardTLS  `json:"tls"`
+	TLS       *StandardTLS `json:"tls,omitempty"`
 	Transport WSTransport  `json:"transport"`
 }
 
@@ -165,6 +165,7 @@ func (g *TemplateGenerator) GenerateVLESSRealityInbound(inbound *models.Inbound,
 }
 
 // GenerateVLESSWSInbound генерирует VLESS+WS+TLS inbound
+// Если CertPath и KeyPath пустые - TLS отключается (nginx терминирует)
 func (g *TemplateGenerator) GenerateVLESSWSInbound(inbound *models.Inbound, users []models.User) *VLESSWSInbound {
 	vlessUsers := make([]VLESSUser, len(users))
 	for i, user := range users {
@@ -178,23 +179,30 @@ func (g *TemplateGenerator) GenerateVLESSWSInbound(inbound *models.Inbound, user
 		wsPath = "/ws"
 	}
 
-	return &VLESSWSInbound{
+	result := &VLESSWSInbound{
 		Type:   "vless",
 		Tag:    fmt.Sprintf("vless-ws-%d", inbound.ID),
 		Listen: "::",
 		Port:   inbound.ListenPort,
 		Users:  vlessUsers,
-		TLS: StandardTLS{
-			Enabled:     true,
-			ServerName:  inbound.SNI,
-			Certificate: inbound.CertPath,
-			Key:         inbound.KeyPath,
-		},
 		Transport: WSTransport{
 			Type: "ws",
 			Path: wsPath,
 		},
 	}
+
+	// Если есть сертификаты - включаем TLS на sing-box
+	// Если нет - значит TLS терминируется на nginx/reverse proxy
+	if inbound.CertPath != "" && inbound.KeyPath != "" {
+		result.TLS = &StandardTLS{
+			Enabled:     true,
+			ServerName:  inbound.SNI,
+			Certificate: inbound.CertPath,
+			Key:         inbound.KeyPath,
+		}
+	}
+
+	return result
 }
 
 // GenerateHysteria2Inbound генерирует Hysteria2 inbound

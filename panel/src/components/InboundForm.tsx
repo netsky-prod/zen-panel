@@ -40,6 +40,8 @@ export default function InboundForm({
 
   // WS fields
   const [wsPath, setWsPath] = useState(inbound?.ws_path || '/ws')
+  const [certPath, setCertPath] = useState(inbound?.cert_path || '/etc/ssl/certs/cert.pem')
+  const [keyPath, setKeyPath] = useState(inbound?.key_path || '/etc/ssl/private/key.pem')
 
   // Hysteria2 fields
   const [upMbps, setUpMbps] = useState(inbound?.up_mbps?.toString() || '100')
@@ -72,12 +74,18 @@ export default function InboundForm({
         ...base,
         sni,
         ws_path: wsPath,
+        cert_path: certPath,
+        key_path: keyPath,
+        fingerprint,
       })
     } else if (protocol === 'hysteria2') {
       onSubmit({
         ...base,
+        sni,
         up_mbps: parseInt(upMbps, 10),
         down_mbps: parseInt(downMbps, 10),
+        cert_path: certPath,
+        key_path: keyPath,
       })
     }
   }
@@ -300,6 +308,9 @@ export default function InboundForm({
               placeholder="e.g., vpn.example.com"
               required
             />
+            <p className="mt-1 text-xs text-dark-400">
+              Your domain name with valid TLS certificate
+            </p>
           </div>
           <div>
             <label htmlFor="wsPath" className="label">
@@ -315,41 +326,149 @@ export default function InboundForm({
               required
             />
           </div>
+
+          <div>
+            <label htmlFor="fingerprint" className="label">
+              TLS Fingerprint
+            </label>
+            <select
+              id="fingerprint"
+              value={fingerprint}
+              onChange={(e) => setFingerprint(e.target.value)}
+              className="select"
+            >
+              <option value="chrome">Chrome</option>
+              <option value="firefox">Firefox</option>
+              <option value="safari">Safari</option>
+              <option value="edge">Edge</option>
+              <option value="random">Random</option>
+            </select>
+          </div>
+
+          <div className="space-y-4 rounded-lg border border-dark-700 bg-dark-800 p-4">
+            <span className="font-medium text-dark-200">TLS Certificate Paths</span>
+            <p className="text-xs text-dark-400">
+              Paths to TLS certificate files on the node server (e.g., Let's Encrypt certs)
+            </p>
+            <div>
+              <label htmlFor="certPath" className="label">
+                Certificate Path
+              </label>
+              <input
+                id="certPath"
+                type="text"
+                value={certPath}
+                onChange={(e) => setCertPath(e.target.value)}
+                className="input font-mono text-xs"
+                placeholder="/etc/ssl/certs/cert.pem"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="keyPath" className="label">
+                Private Key Path
+              </label>
+              <input
+                id="keyPath"
+                type="text"
+                value={keyPath}
+                onChange={(e) => setKeyPath(e.target.value)}
+                className="input font-mono text-xs"
+                placeholder="/etc/ssl/private/key.pem"
+                required
+              />
+            </div>
+          </div>
         </>
       )}
 
       {/* Hysteria2 specific fields */}
       {protocol === 'hysteria2' && (
-        <div className="grid grid-cols-2 gap-4">
+        <>
           <div>
-            <label htmlFor="upMbps" className="label">
-              Upload Speed (Mbps)
+            <label htmlFor="sni" className="label">
+              SNI (Server Name Indication)
             </label>
             <input
-              id="upMbps"
-              type="number"
-              min="1"
-              value={upMbps}
-              onChange={(e) => setUpMbps(e.target.value)}
+              id="sni"
+              type="text"
+              value={sni}
+              onChange={(e) => setSni(e.target.value)}
               className="input"
+              placeholder="e.g., vpn.example.com"
               required
             />
+            <p className="mt-1 text-xs text-dark-400">
+              Your domain name with valid TLS certificate
+            </p>
           </div>
-          <div>
-            <label htmlFor="downMbps" className="label">
-              Download Speed (Mbps)
-            </label>
-            <input
-              id="downMbps"
-              type="number"
-              min="1"
-              value={downMbps}
-              onChange={(e) => setDownMbps(e.target.value)}
-              className="input"
-              required
-            />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="upMbps" className="label">
+                Upload Speed (Mbps)
+              </label>
+              <input
+                id="upMbps"
+                type="number"
+                min="1"
+                value={upMbps}
+                onChange={(e) => setUpMbps(e.target.value)}
+                className="input"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="downMbps" className="label">
+                Download Speed (Mbps)
+              </label>
+              <input
+                id="downMbps"
+                type="number"
+                min="1"
+                value={downMbps}
+                onChange={(e) => setDownMbps(e.target.value)}
+                className="input"
+                required
+              />
+            </div>
           </div>
-        </div>
+
+          <div className="space-y-4 rounded-lg border border-dark-700 bg-dark-800 p-4">
+            <span className="font-medium text-dark-200">TLS Certificate Paths</span>
+            <p className="text-xs text-dark-400">
+              Paths to TLS certificate files on the node server (e.g., Let's Encrypt certs)
+            </p>
+            <div>
+              <label htmlFor="certPath" className="label">
+                Certificate Path
+              </label>
+              <input
+                id="certPath"
+                type="text"
+                value={certPath}
+                onChange={(e) => setCertPath(e.target.value)}
+                className="input font-mono text-xs"
+                placeholder="/etc/ssl/certs/cert.pem"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="keyPath" className="label">
+                Private Key Path
+              </label>
+              <input
+                id="keyPath"
+                type="text"
+                value={keyPath}
+                onChange={(e) => setKeyPath(e.target.value)}
+                className="input font-mono text-xs"
+                placeholder="/etc/ssl/private/key.pem"
+                required
+              />
+            </div>
+          </div>
+        </>
       )}
 
       <div className="flex items-center gap-3">

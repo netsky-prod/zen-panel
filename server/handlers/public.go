@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"html/template"
 
+	"os"
+
 	"zen-admin/models"
 	"zen-admin/services"
 
@@ -17,6 +19,7 @@ import (
 type PublicHandler struct {
 	db        *gorm.DB
 	configGen *services.ConfigGenerator
+	publicURL string
 }
 
 // NewPublicHandler создаёт новый обработчик
@@ -24,6 +27,7 @@ func NewPublicHandler(db *gorm.DB) *PublicHandler {
 	return &PublicHandler{
 		db:        db,
 		configGen: services.NewConfigGenerator(),
+		publicURL: os.Getenv("PUBLIC_URL"),
 	}
 }
 
@@ -89,7 +93,11 @@ func (h *PublicHandler) UserConfigPage(c *fiber.Ctx) error {
 	}
 
 	// Subscription URL
-	subscriptionURL := fmt.Sprintf("%s/sub/%s/raw", c.BaseURL(), userUUID)
+	baseURL := h.publicURL
+	if baseURL == "" {
+		baseURL = c.BaseURL()
+	}
+	subscriptionURL := fmt.Sprintf("%s/api/sub/%s/raw", baseURL, userUUID)
 
 	// Форматируем лимит трафика
 	dataLimit := "Unlimited"

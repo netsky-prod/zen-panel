@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"strconv"
 
 	"zen-admin/models"
@@ -376,17 +377,20 @@ func (h *NodeHandler) Sync(c *fiber.Ctx) error {
 		})
 	}
 
-	// Перезапускаем sing-box чтобы применить новый конфиг
-	if err := h.nodeClient.RestartSingbox(&node); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"success": false,
-			"error":   "Конфиг отправлен, но ошибка перезапуска sing-box: " + err.Error(),
-		})
-	}
+	// Перезапускаем sing-box асинхронно (чтобы не обрывать HTTP ответ,
+	// т.к. запрос может идти через REALITY, и рестарт обрежет соединение)
+	nodeCopy := node
+	go func() {
+		if err := h.nodeClient.RestartSingbox(&nodeCopy); err != nil {
+			log.Printf("Sync: ошибка перезапуска sing-box на ноде %s: %v", nodeCopy.Name, err)
+		} else {
+			log.Printf("Sync: sing-box перезапущен на ноде %s", nodeCopy.Name)
+		}
+	}()
 
 	return c.JSON(fiber.Map{
 		"success": true,
-		"message": "Конфиг синхронизирован и sing-box перезапущен",
+		"message": "Конфиг синхронизирован, sing-box перезапускается",
 	})
 }
 

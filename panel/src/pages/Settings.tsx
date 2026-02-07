@@ -145,7 +145,7 @@ export default function Settings() {
                 <Server className="h-5 w-5 text-dark-400" />
                 <span className="text-dark-300">Application</span>
               </div>
-              <span className="font-mono text-white">Zen VPN Panel</span>
+              <span className="font-mono text-white">Zen Panel</span>
             </div>
 
             <div className="flex items-center justify-between rounded-lg bg-dark-800 p-4">
@@ -171,25 +171,21 @@ export default function Settings() {
 
       {/* About */}
       <div className="card">
-        <h2 className="mb-4 font-semibold text-white">About Zen VPN Panel</h2>
+        <h2 className="mb-4 font-semibold text-white">About Zen Panel</h2>
         <p className="text-dark-300">
-          Zen VPN Panel is a centralized management system for VPN infrastructure
-          supporting multiple protocols including VLESS + REALITY, VLESS + WebSocket,
-          and Hysteria2. It provides a modern web interface for managing users, nodes,
+          Zen Panel is a centralized management system for network infrastructure.
+          It provides a modern web interface for managing users, nodes,
           and traffic monitoring.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           <span className="rounded-full bg-dark-800 px-3 py-1 text-xs text-dark-300">
-            sing-box
+            Go
           </span>
           <span className="rounded-full bg-dark-800 px-3 py-1 text-xs text-dark-300">
-            REALITY
+            React
           </span>
           <span className="rounded-full bg-dark-800 px-3 py-1 text-xs text-dark-300">
-            Hysteria2
-          </span>
-          <span className="rounded-full bg-dark-800 px-3 py-1 text-xs text-dark-300">
-            WebSocket
+            PostgreSQL
           </span>
         </div>
       </div>

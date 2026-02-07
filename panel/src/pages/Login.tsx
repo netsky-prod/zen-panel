@@ -34,7 +34,7 @@ export default function Login() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-600">
             <Shield className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Zen VPN Admin</h1>
+          <h1 className="text-2xl font-bold text-white">Zen Admin</h1>
           <p className="mt-2 text-dark-400">Sign in to your account</p>
         </div>
 

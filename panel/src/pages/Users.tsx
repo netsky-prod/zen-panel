@@ -161,7 +161,7 @@ export default function Users() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Users</h1>
-          <p className="mt-1 text-dark-400">Manage VPN users</p>
+          <p className="mt-1 text-dark-400">Manage users and access</p>
         </div>
         <button onClick={() => setIsFormOpen(true)} className="btn-primary">
           <Plus className="h-4 w-4" />

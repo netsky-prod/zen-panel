@@ -55,7 +55,7 @@ export default function Layout({ children }: LayoutProps) {
           {/* Logo */}
           <div className="flex h-16 items-center gap-3 border-b border-dark-800 px-6">
             <Shield className="h-8 w-8 text-blue-500" />
-            <span className="text-xl font-bold text-white">Zen VPN</span>
+            <span className="text-xl font-bold text-white">Zen Panel</span>
             <button
               onClick={() => setSidebarOpen(false)}
               className="ml-auto rounded-lg p-2 hover:bg-dark-800 lg:hidden"

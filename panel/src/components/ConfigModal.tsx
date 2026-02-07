@@ -38,7 +38,7 @@ export default function ConfigModal({
     { id: 'subscription', label: 'Subscription' },
     { id: 'url', label: 'Share URL' },
     { id: 'qr', label: 'QR Code' },
-    { id: 'singbox', label: 'sing-box JSON' },
+    { id: 'singbox', label: 'JSON Config' },
   ]
 
   const currentUrl = config.share_urls?.[selectedUrl]?.url || config.share_url
@@ -117,7 +117,7 @@ export default function ConfigModal({
               Raw Subscription (for apps)
             </h3>
             <p className="text-xs text-dark-400 mb-3">
-              Direct import URL for v2rayNG, Shadowrocket, Clash, NekoBox
+              Direct import URL for client applications
             </p>
             {rawSubscriptionUrl ? (
               <div className="flex gap-2">
@@ -182,7 +182,7 @@ export default function ConfigModal({
             </button>
           </div>
           <p className="text-xs text-dark-400">
-            This is a direct vless:// or hysteria2:// URL for importing into VPN clients
+            Direct import URL for client applications
           </p>
         </div>
       )}
@@ -209,7 +209,7 @@ export default function ConfigModal({
             <QRCode value={currentUrl} size={250} />
           </div>
           <p className="text-center text-sm text-dark-400">
-            Scan this QR code with your VPN client
+            Scan this QR code with the client app
           </p>
         </div>
       )}

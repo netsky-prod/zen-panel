@@ -67,7 +67,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="mt-1 text-dark-400">Overview of your VPN infrastructure</p>
+        <p className="mt-1 text-dark-400">Overview of your infrastructure</p>
       </div>
 
       {/* Stats Grid */}
@@ -114,7 +114,7 @@ export default function Dashboard() {
                 </div>
                 <p className="mt-1 text-sm text-dark-400">{node.address}</p>
                 <p className="text-xs text-dark-500">
-                  {node.user_count} users / {node.inbound_count} inbounds
+                  {node.user_count} users / {node.inbound_count} services
                 </p>
               </div>
             </div>

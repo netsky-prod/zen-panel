@@ -179,7 +179,7 @@ export default function Nodes() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Nodes</h1>
-          <p className="mt-1 text-dark-400">Manage VPN server nodes</p>
+          <p className="mt-1 text-dark-400">Manage server nodes</p>
         </div>
         <button onClick={() => setIsNodeFormOpen(true)} className="btn-primary">
           <Plus className="h-4 w-4" />
@@ -341,7 +341,7 @@ export default function Nodes() {
             <Server className="mx-auto h-12 w-12 text-dark-500" />
             <h3 className="mt-4 text-lg font-medium text-white">No nodes yet</h3>
             <p className="mt-2 text-dark-400">
-              Add your first VPN node to get started
+              Add your first node to get started
             </p>
             <button
               onClick={() => setIsNodeFormOpen(true)}

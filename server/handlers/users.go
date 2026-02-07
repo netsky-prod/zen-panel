@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
 	"zen-admin/models"
 	"zen-admin/services"
+	"zen-admin/singbox"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -15,15 +17,67 @@ import (
 
 // UserHandler обрабатывает запросы пользователей VPN
 type UserHandler struct {
-	db        *gorm.DB
-	configGen *services.ConfigGenerator
+	db          *gorm.DB
+	configGen   *services.ConfigGenerator
+	nodeClient  *services.NodeClient
+	templateGen *singbox.TemplateGenerator
 }
 
 // NewUserHandler создаёт новый обработчик пользователей
 func NewUserHandler(db *gorm.DB) *UserHandler {
 	return &UserHandler{
-		db:        db,
-		configGen: services.NewConfigGenerator(),
+		db:          db,
+		configGen:   services.NewConfigGenerator(),
+		nodeClient:  services.NewNodeClient(),
+		templateGen: singbox.NewTemplateGenerator(),
+	}
+}
+
+// syncAffectedNodes синхронизирует конфиг sing-box на всех нодах,
+// к которым привязаны инбаунды пользователя
+func (h *UserHandler) syncAffectedNodes() {
+	// Получаем все активные ноды с инбаундами
+	var nodes []models.Node
+	if err := h.db.Preload("Inbounds").Where("enabled = ?", true).Find(&nodes).Error; err != nil {
+		log.Printf("Auto-sync: ошибка получения нод: %v", err)
+		return
+	}
+
+	for _, node := range nodes {
+		usersByInbound := make(map[uint][]models.User)
+		for _, inbound := range node.Inbounds {
+			if !inbound.Enabled {
+				continue
+			}
+			var users []models.User
+			h.db.Model(&inbound).Association("Users").Find(&users)
+			// Фильтруем только включённых юзеров
+			var enabledUsers []models.User
+			for _, u := range users {
+				if u.Enabled {
+					enabledUsers = append(enabledUsers, u)
+				}
+			}
+			usersByInbound[inbound.ID] = enabledUsers
+		}
+
+		config, err := h.templateGen.GenerateServerConfig(node.Inbounds, usersByInbound)
+		if err != nil {
+			log.Printf("Auto-sync: ошибка генерации конфига для ноды %s: %v", node.Name, err)
+			continue
+		}
+
+		if err := h.nodeClient.PushConfig(&node, config); err != nil {
+			log.Printf("Auto-sync: ошибка отправки конфига на ноду %s: %v", node.Name, err)
+			continue
+		}
+
+		if err := h.nodeClient.RestartSingbox(&node); err != nil {
+			log.Printf("Auto-sync: ошибка перезапуска sing-box на ноде %s: %v", node.Name, err)
+			continue
+		}
+
+		log.Printf("Auto-sync: конфиг синхронизирован и sing-box перезапущен на ноде %s", node.Name)
 	}
 }
 
@@ -188,6 +242,9 @@ func (h *UserHandler) Create(c *fiber.Ctx) error {
 	// Загружаем инбаунды для ответа
 	h.db.Preload("Inbounds").First(&user, user.ID)
 
+	// Авто-синк конфигов на ноды
+	go h.syncAffectedNodes()
+
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"success": true,
 		"data":    user,
@@ -271,6 +328,9 @@ func (h *UserHandler) Update(c *fiber.Ctx) error {
 	// Загружаем инбаунды для ответа
 	h.db.Preload("Inbounds").First(&user, user.ID)
 
+	// Авто-синк конфигов на ноды
+	go h.syncAffectedNodes()
+
 	return c.JSON(fiber.Map{
 		"success": true,
 		"data":    user,
@@ -312,6 +372,9 @@ func (h *UserHandler) Delete(c *fiber.Ctx) error {
 			"error":   "Ошибка удаления пользователя",
 		})
 	}
+
+	// Авто-синк конфигов на ноды
+	go h.syncAffectedNodes()
 
 	return c.JSON(fiber.Map{
 		"success": true,
@@ -491,12 +554,15 @@ func (h *UserHandler) ResetUUID(c *fiber.Ctx) error {
 		})
 	}
 
+	// Авто-синк конфигов на ноды
+	go h.syncAffectedNodes()
+
 	return c.JSON(fiber.Map{
 		"success": true,
 		"data": fiber.Map{
 			"uuid": user.UUID.String(),
 		},
-		"message": "UUID успешно сброшен. Не забудьте синхронизировать конфиги на нодах.",
+		"message": "UUID успешно сброшен. Конфиги автоматически синхронизированы.",
 	})
 }
 

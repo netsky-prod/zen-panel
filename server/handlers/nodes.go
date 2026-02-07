@@ -376,9 +376,17 @@ func (h *NodeHandler) Sync(c *fiber.Ctx) error {
 		})
 	}
 
+	// Перезапускаем sing-box чтобы применить новый конфиг
+	if err := h.nodeClient.RestartSingbox(&node); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"success": false,
+			"error":   "Конфиг отправлен, но ошибка перезапуска sing-box: " + err.Error(),
+		})
+	}
+
 	return c.JSON(fiber.Map{
 		"success": true,
-		"message": "Конфиг успешно синхронизирован",
+		"message": "Конфиг синхронизирован и sing-box перезапущен",
 	})
 }
 

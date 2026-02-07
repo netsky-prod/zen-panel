@@ -39,6 +39,7 @@ services:
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
       PUBLIC_URL: ${PUBLIC_URL:-}
+      SUB_PASSWORD: ${SUB_PASSWORD:-}
     depends_on:
       postgres:
         condition: service_healthy

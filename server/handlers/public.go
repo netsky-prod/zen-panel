@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"html/template"
-
 	"os"
 
 	"zen-admin/models"
@@ -17,42 +16,203 @@ import (
 
 // PublicHandler обрабатывает публичные страницы для юзеров
 type PublicHandler struct {
-	db        *gorm.DB
-	configGen *services.ConfigGenerator
-	publicURL string
+	db          *gorm.DB
+	configGen   *services.ConfigGenerator
+	publicURL   string
+	subPassword string
 }
 
 // NewPublicHandler создаёт новый обработчик
 func NewPublicHandler(db *gorm.DB) *PublicHandler {
 	return &PublicHandler{
-		db:        db,
-		configGen: services.NewConfigGenerator(),
-		publicURL: os.Getenv("PUBLIC_URL"),
+		db:          db,
+		configGen:   services.NewConfigGenerator(),
+		publicURL:   os.Getenv("PUBLIC_URL"),
+		subPassword: os.Getenv("SUB_PASSWORD"),
 	}
 }
 
+// checkSubPassword проверяет пароль подписки
+func (h *PublicHandler) checkSubPassword(c *fiber.Ctx) bool {
+	if h.subPassword == "" {
+		return true // пароль не установлен - доступ открыт
+	}
+	key := c.Query("key")
+	return key == h.subPassword
+}
+
 // UserConfigPage - GET /sub/:uuid
-// Публичная страница с конфигом пользователя
+// Публичная страница с конфигом пользователя (замаскирована под буддизм)
 func (h *PublicHandler) UserConfigPage(c *fiber.Ctx) error {
 	userUUID := c.Params("uuid")
 	if userUUID == "" {
-		return c.Status(fiber.StatusBadRequest).SendString("Invalid UUID")
+		return c.Status(fiber.StatusNotFound).SendString("Page not found")
 	}
 
 	var user models.User
 	if err := h.db.Preload("Inbounds.Node").Where("uuid = ?", userUUID).First(&user).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).SendString("User not found")
+		return c.Status(fiber.StatusNotFound).SendString("Page not found")
 	}
 
 	if !user.Enabled {
-		return c.Status(fiber.StatusForbidden).SendString("Account disabled")
+		return c.Status(fiber.StatusNotFound).SendString("Page not found")
 	}
 
-	if len(user.Inbounds) == 0 {
-		return c.Status(fiber.StatusNotFound).SendString("No servers configured")
+	// Если пароль не совпадает - показываем страницу ввода пароля
+	if !h.checkSubPassword(c) {
+		return h.renderPasswordPage(c, userUUID)
 	}
 
-	// Генерируем данные для каждого inbound
+	// Пароль верный - показываем конфиги
+	return h.renderConfigPage(c, &user, userUUID)
+}
+
+// renderPasswordPage показывает замаскированную страницу ввода пароля
+func (h *PublicHandler) renderPasswordPage(c *fiber.Ctx, uuid string) error {
+	html := `<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дзен-буддизм — Личный кабинет практикующего</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: #1a1612;
+            min-height: 100vh;
+            color: #d4c5a9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 460px;
+            width: 100%;
+            padding: 20px;
+        }
+        .enso {
+            text-align: center;
+            font-size: 80px;
+            margin-bottom: 20px;
+            opacity: 0.7;
+        }
+        .title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: 400;
+            color: #c4a265;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+        .subtitle {
+            text-align: center;
+            font-size: 13px;
+            color: #8a7a60;
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+        .form-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(196,162,101,0.15);
+            border-radius: 12px;
+            padding: 30px;
+        }
+        .form-label {
+            font-size: 13px;
+            color: #8a7a60;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(196,162,101,0.2);
+            border-radius: 8px;
+            color: #d4c5a9;
+            font-size: 16px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .form-input:focus {
+            border-color: rgba(196,162,101,0.5);
+        }
+        .form-input::placeholder {
+            color: #5a4f3f;
+        }
+        .form-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #8b6914, #c4a265);
+            border: none;
+            border-radius: 8px;
+            color: #1a1612;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 16px;
+            transition: opacity 0.3s;
+            letter-spacing: 1px;
+        }
+        .form-btn:hover { opacity: 0.85; }
+        .error-msg {
+            color: #a05a5a;
+            font-size: 13px;
+            margin-top: 12px;
+            text-align: center;
+            display: none;
+        }
+        .quote {
+            text-align: center;
+            font-size: 12px;
+            color: #5a4f3f;
+            margin-top: 30px;
+            font-style: italic;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="enso">&#9775;</div>
+        <div class="title">Личный кабинет</div>
+        <div class="subtitle">Портал практикующего дзен-буддизм</div>
+
+        <div class="form-card">
+            <label class="form-label">Введите код доступа к материалам</label>
+            <input type="password" id="passInput" class="form-input" placeholder="Код практикующего" autofocus>
+            <button class="form-btn" id="enterBtn" onclick="enter()">Войти</button>
+            <div class="error-msg" id="errMsg">Неверный код. Обратитесь к наставнику.</div>
+        </div>
+
+        <div class="quote">
+            «Путь в тысячу ли начинается с одного шага»<br>— Лао-цзы
+        </div>
+    </div>
+
+    <script>
+        var uuid = '` + template.JSEscapeString(uuid) + `';
+        document.getElementById('passInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') enter();
+        });
+        function enter() {
+            var key = document.getElementById('passInput').value;
+            if (!key) return;
+            window.location.href = window.location.pathname + '?key=' + encodeURIComponent(key);
+        }
+    </script>
+</body>
+</html>`
+
+	c.Set("Content-Type", "text/html; charset=utf-8")
+	return c.SendString(html)
+}
+
+// renderConfigPage показывает конфиги (замаскировано под буддийские материалы)
+func (h *PublicHandler) renderConfigPage(c *fiber.Ctx, user *models.User, userUUID string) error {
 	type InboundData struct {
 		Name     string
 		NodeName string
@@ -67,12 +227,11 @@ func (h *PublicHandler) UserConfigPage(c *fiber.Ctx) error {
 			continue
 		}
 
-		shareURL, err := h.configGen.GenerateShareURL(&user, &inbound)
+		shareURL, err := h.configGen.GenerateShareURL(user, &inbound)
 		if err != nil {
 			continue
 		}
 
-		// Генерируем QR код
 		qr, err := qrcode.New(shareURL, qrcode.Medium)
 		if err != nil {
 			continue
@@ -92,189 +251,214 @@ func (h *PublicHandler) UserConfigPage(c *fiber.Ctx) error {
 		})
 	}
 
-	// Subscription URL
 	baseURL := h.publicURL
 	if baseURL == "" {
 		baseURL = c.BaseURL()
 	}
+	key := c.Query("key")
 	subscriptionURL := fmt.Sprintf("%s/api/sub/%s/raw", baseURL, userUUID)
+	if key != "" {
+		subscriptionURL += "?key=" + key
+	}
 
-	// Форматируем лимит трафика
 	dataLimit := "Unlimited"
 	if user.DataLimit > 0 {
 		dataLimit = formatBytes(user.DataLimit)
 	}
 	dataUsed := formatBytes(user.DataUsed)
 
-	// HTML страница
 	html := `<!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VPN Config - {{.UserName}}</title>
+    <title>Дзен-буддизм — Материалы практикующего</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: #1a1612;
             min-height: 100vh;
-            color: #fff;
+            color: #d4c5a9;
             padding: 20px;
         }
         .container { max-width: 600px; margin: 0 auto; }
         .header {
             text-align: center;
-            padding: 30px 0;
+            padding: 25px 0 20px;
         }
+        .enso { font-size: 48px; opacity: 0.6; margin-bottom: 10px; }
         .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 22px;
+            font-weight: 400;
+            color: #c4a265;
+            letter-spacing: 2px;
         }
-        .header .user-name {
-            color: #888;
-            font-size: 14px;
+        .header .practitioner {
+            color: #6a5f4f;
+            font-size: 13px;
+            margin-top: 6px;
+            font-style: italic;
         }
         .stats {
             display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
+            gap: 12px;
+            margin-bottom: 20px;
         }
         .stat {
             flex: 1;
-            background: rgba(255,255,255,0.05);
-            border-radius: 12px;
-            padding: 15px;
+            background: rgba(196,162,101,0.05);
+            border: 1px solid rgba(196,162,101,0.1);
+            border-radius: 10px;
+            padding: 14px;
             text-align: center;
         }
-        .stat-value { font-size: 20px; font-weight: 600; color: #00d4ff; }
-        .stat-label { font-size: 12px; color: #888; margin-top: 5px; }
+        .stat-value { font-size: 18px; font-weight: 600; color: #c4a265; }
+        .stat-label { font-size: 11px; color: #6a5f4f; margin-top: 4px; }
         .card {
-            background: rgba(255,255,255,0.05);
-            border-radius: 16px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
             padding: 20px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 16px;
+            border: 1px solid rgba(196,162,101,0.1);
         }
         .card-title {
-            font-size: 18px;
-            margin-bottom: 15px;
+            font-size: 16px;
+            margin-bottom: 14px;
             display: flex;
             align-items: center;
             gap: 10px;
+            color: #c4a265;
         }
         .badge {
-            font-size: 11px;
-            padding: 4px 8px;
-            border-radius: 6px;
-            background: #7b2cbf;
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: rgba(196,162,101,0.15);
+            color: #c4a265;
             text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: -apple-system, sans-serif;
         }
         .qr-container {
             text-align: center;
-            margin: 15px 0;
+            margin: 12px 0;
         }
         .qr-container img {
             background: #fff;
-            padding: 10px;
-            border-radius: 12px;
-            max-width: 100%;
+            padding: 8px;
+            border-radius: 10px;
+            max-width: 260px;
+            width: 100%;
         }
         .url-box {
             background: rgba(0,0,0,0.3);
             border-radius: 8px;
-            padding: 12px;
-            font-family: monospace;
-            font-size: 11px;
+            padding: 12px 50px 12px 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
             word-break: break-all;
-            color: #aaa;
+            color: #7a6f5f;
             margin: 10px 0;
             position: relative;
+            line-height: 1.5;
         }
         .copy-btn {
             position: absolute;
-            right: 8px;
-            top: 8px;
-            background: #00d4ff;
+            right: 6px;
+            top: 6px;
+            background: linear-gradient(135deg, #8b6914, #c4a265);
             border: none;
-            color: #000;
-            padding: 6px 12px;
-            border-radius: 6px;
+            color: #1a1612;
+            padding: 5px 10px;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
+            font-family: -apple-system, sans-serif;
         }
-        .copy-btn:hover { background: #00b8e6; }
-        .copy-btn.copied { background: #4ade80; }
-        .subscription-section {
-            background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(123,44,191,0.1));
-            border: 1px solid rgba(0,212,255,0.3);
+        .copy-btn:hover { opacity: 0.85; }
+        .copy-btn.copied { background: #5a8a5a; color: #fff; }
+        .sub-section {
+            background: rgba(196,162,101,0.04);
+            border: 1px solid rgba(196,162,101,0.15);
         }
-        .subscription-section .card-title { color: #00d4ff; }
-        .help-text {
-            font-size: 12px;
-            color: #888;
-            margin-top: 10px;
+        .hint {
+            font-size: 11px;
+            color: #5a4f3f;
+            margin-top: 8px;
+            font-style: italic;
         }
         .apps {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
-            margin-top: 15px;
+            margin-top: 12px;
         }
         .app {
-            background: rgba(255,255,255,0.1);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 12px;
+            background: rgba(196,162,101,0.08);
+            border: 1px solid rgba(196,162,101,0.1);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #8a7a60;
+            font-family: -apple-system, sans-serif;
         }
         .tabs {
             display: flex;
-            gap: 5px;
-            margin-bottom: 15px;
+            gap: 4px;
+            margin-bottom: 12px;
         }
         .tab {
             flex: 1;
-            padding: 10px;
-            background: rgba(255,255,255,0.05);
-            border: none;
-            color: #888;
-            border-radius: 8px;
+            padding: 8px;
+            background: rgba(196,162,101,0.05);
+            border: 1px solid rgba(196,162,101,0.08);
+            color: #6a5f4f;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 12px;
+            font-family: inherit;
         }
         .tab.active {
-            background: rgba(0,212,255,0.2);
-            color: #00d4ff;
+            background: rgba(196,162,101,0.12);
+            color: #c4a265;
+            border-color: rgba(196,162,101,0.2);
         }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            padding: 15px;
+            font-size: 11px;
+            color: #3a352d;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔐 Zen VPN</h1>
-            <div class="user-name">{{.UserName}}</div>
+            <div class="enso">&#9775;</div>
+            <h1>Материалы практикующего</h1>
+            <div class="practitioner">{{.UserName}}</div>
         </div>
 
         <div class="stats">
             <div class="stat">
                 <div class="stat-value">{{.DataUsed}}</div>
-                <div class="stat-label">Used</div>
+                <div class="stat-label">Использовано</div>
             </div>
             <div class="stat">
                 <div class="stat-value">{{.DataLimit}}</div>
-                <div class="stat-label">Limit</div>
+                <div class="stat-label">Доступно</div>
             </div>
         </div>
 
-        <div class="card subscription-section">
-            <div class="card-title">📡 Subscription URL</div>
-            <p class="help-text">Add this URL to your VPN app for auto-updates:</p>
+        <div class="card sub-section">
+            <div class="card-title">Ссылка для приложений</div>
+            <p class="hint">Добавьте эту ссылку в приложение для автоматического обновления:</p>
             <div class="url-box">
                 <span id="sub-url">{{.SubscriptionURL}}</span>
                 <button class="copy-btn" onclick="copyText('sub-url', this)">Copy</button>
@@ -282,7 +466,7 @@ func (h *PublicHandler) UserConfigPage(c *fiber.Ctx) error {
             <div class="apps">
                 <span class="app">v2rayNG</span>
                 <span class="app">Shadowrocket</span>
-                <span class="app">Clash</span>
+                <span class="app">Hiddify</span>
                 <span class="app">NekoBox</span>
             </div>
         </div>
@@ -295,15 +479,15 @@ func (h *PublicHandler) UserConfigPage(c *fiber.Ctx) error {
             </div>
 
             <div class="tabs">
-                <button class="tab active" onclick="showTab({{$i}}, 'qr')">QR Code</button>
-                <button class="tab" onclick="showTab({{$i}}, 'url')">URL</button>
+                <button class="tab active" onclick="showTab({{$i}}, 'qr', this)">QR-код</button>
+                <button class="tab" onclick="showTab({{$i}}, 'url', this)">Ссылка</button>
             </div>
 
             <div id="tab-{{$i}}-qr" class="tab-content active">
                 <div class="qr-container">
-                    <img src="data:image/png;base64,{{$inbound.QRCode}}" alt="QR Code">
+                    <img src="data:image/png;base64,{{$inbound.QRCode}}" alt="QR">
                 </div>
-                <p class="help-text" style="text-align:center">Scan with your phone camera or VPN app</p>
+                <p class="hint" style="text-align:center">Отсканируйте камерой или из приложения</p>
             </div>
 
             <div id="tab-{{$i}}-url" class="tab-content">
@@ -314,27 +498,31 @@ func (h *PublicHandler) UserConfigPage(c *fiber.Ctx) error {
             </div>
         </div>
         {{end}}
+
+        <div class="footer">
+            zen-buddhism.ru
+        </div>
     </div>
 
     <script>
         function copyText(id, btn) {
-            const text = document.getElementById(id).innerText;
-            navigator.clipboard.writeText(text).then(() => {
+            var text = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(text).then(function() {
                 btn.innerText = 'Copied!';
                 btn.classList.add('copied');
-                setTimeout(() => {
+                setTimeout(function() {
                     btn.innerText = 'Copy';
                     btn.classList.remove('copied');
                 }, 2000);
             });
         }
 
-        function showTab(cardIndex, tabName) {
-            const card = document.querySelectorAll('.card')[cardIndex + 1];
-            card.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            card.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-            event.target.classList.add('active');
+        function showTab(cardIndex, tabName, tabBtn) {
+            var cards = document.querySelectorAll('.card');
+            var card = cards[cardIndex + 1];
+            card.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+            card.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+            tabBtn.classList.add('active');
             document.getElementById('tab-' + cardIndex + '-' + tabName).classList.add('active');
         }
     </script>
@@ -343,7 +531,7 @@ func (h *PublicHandler) UserConfigPage(c *fiber.Ctx) error {
 
 	tmpl, err := template.New("config").Parse(html)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Template error")
+		return c.Status(fiber.StatusInternalServerError).SendString("Page not found")
 	}
 
 	data := struct {
@@ -365,20 +553,24 @@ func (h *PublicHandler) UserConfigPage(c *fiber.Ctx) error {
 }
 
 // RawSubscription - GET /sub/:uuid/raw
-// Raw subscription для импорта в приложения
+// Raw subscription для импорта в приложения (защищён паролем)
 func (h *PublicHandler) RawSubscription(c *fiber.Ctx) error {
+	if !h.checkSubPassword(c) {
+		return c.Status(fiber.StatusForbidden).SendString("Access denied")
+	}
+
 	userUUID := c.Params("uuid")
 	if userUUID == "" {
-		return c.Status(fiber.StatusBadRequest).SendString("Invalid UUID")
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid request")
 	}
 
 	var user models.User
 	if err := h.db.Preload("Inbounds.Node").Where("uuid = ?", userUUID).First(&user).Error; err != nil {
-		return c.Status(fiber.StatusNotFound).SendString("User not found")
+		return c.Status(fiber.StatusNotFound).SendString("Not found")
 	}
 
 	if !user.Enabled {
-		return c.Status(fiber.StatusForbidden).SendString("User disabled")
+		return c.Status(fiber.StatusForbidden).SendString("Disabled")
 	}
 
 	subscription, err := h.configGen.GenerateSubscription(&user, user.Inbounds)

@@ -158,6 +158,7 @@ func (g *ConfigGenerator) generateOutbound(user *models.User, inbound *models.In
 }
 
 // generateVLESSRealityOutbound генерирует VLESS+REALITY outbound
+// Anti-TSPU: пустой SNI + дефолтный Go fingerprint (без uTLS) обходят эвристику DPI
 func (g *ConfigGenerator) generateVLESSRealityOutbound(user *models.User, inbound *models.Inbound, tag string) (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"type":        "vless",
@@ -167,12 +168,7 @@ func (g *ConfigGenerator) generateVLESSRealityOutbound(user *models.User, inboun
 		"uuid":        user.UUID.String(),
 		"flow":        "xtls-rprx-vision",
 		"tls": map[string]interface{}{
-			"enabled":     true,
-			"server_name": inbound.SNI,
-			"utls": map[string]interface{}{
-				"enabled":     true,
-				"fingerprint": inbound.Fingerprint,
-			},
+			"enabled": true,
 			"reality": map[string]interface{}{
 				"enabled":    true,
 				"public_key": inbound.PublicKey,
@@ -263,15 +259,14 @@ func (g *ConfigGenerator) GenerateShareURL(user *models.User, inbound *models.In
 func (g *ConfigGenerator) generateVLESSRealityURL(user *models.User, inbound *models.Inbound) (string, error) {
 	// Формат: vless://uuid@server:port?params#name
 	params := url.Values{}
+	// Anti-TSPU: пустой SNI + без fingerprint обходят эвристику DPI
 	params.Set("type", "tcp")
 	params.Set("security", "reality")
-	params.Set("sni", inbound.SNI)
-	params.Set("fp", inbound.Fingerprint)
 	params.Set("pbk", inbound.PublicKey)
 	params.Set("sid", inbound.ShortID)
 	params.Set("flow", "xtls-rprx-vision")
 
-	name := url.QueryEscape(fmt.Sprintf("%s - %s", inbound.Node.Name, inbound.Name))
+	name := url.QueryEscape(fmt.Sprintf("%s (reality)", user.Name))
 	shareURL := fmt.Sprintf("vless://%s@%s:%d?%s#%s",
 		user.UUID.String(),
 		inbound.Node.Address,
@@ -304,7 +299,7 @@ func (g *ConfigGenerator) generateVLESSWSURL(user *models.User, inbound *models.
 	params.Set("path", wsPath)
 	params.Set("fp", inbound.Fingerprint)
 
-	name := url.QueryEscape(fmt.Sprintf("%s - %s", inbound.Node.Name, inbound.Name))
+	name := url.QueryEscape(fmt.Sprintf("%s (ws)", user.Name))
 	// Для WS используем домен (SNI) вместо IP — менее палевно для DPI
 	server := inbound.SNI
 	if server == "" {
@@ -328,7 +323,7 @@ func (g *ConfigGenerator) generateHysteria2URL(user *models.User, inbound *model
 	params := url.Values{}
 	params.Set("sni", inbound.SNI)
 
-	name := url.QueryEscape(fmt.Sprintf("%s - %s", inbound.Node.Name, inbound.Name))
+	name := url.QueryEscape(fmt.Sprintf("%s (hy2)", user.Name))
 	shareURL := fmt.Sprintf("hysteria2://%s@%s:%d?%s#%s",
 		user.UUID.String(),
 		inbound.Node.Address,

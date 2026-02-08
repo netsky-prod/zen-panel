@@ -158,7 +158,8 @@ func (g *ConfigGenerator) generateOutbound(user *models.User, inbound *models.In
 }
 
 // generateVLESSRealityOutbound генерирует VLESS+REALITY outbound
-// Anti-TSPU: пустой SNI + дефолтный Go fingerprint (без uTLS) обходят эвристику DPI
+// Anti-TSPU: без uTLS fingerprint (дефолтный Go TLS) — менее детектируемый отпечаток
+// SNI обязателен для REALITY — без него handshake не работает
 func (g *ConfigGenerator) generateVLESSRealityOutbound(user *models.User, inbound *models.Inbound, tag string) (map[string]interface{}, error) {
 	return map[string]interface{}{
 		"type":        "vless",
@@ -168,7 +169,8 @@ func (g *ConfigGenerator) generateVLESSRealityOutbound(user *models.User, inboun
 		"uuid":        user.UUID.String(),
 		"flow":        "xtls-rprx-vision",
 		"tls": map[string]interface{}{
-			"enabled": true,
+			"enabled":     true,
+			"server_name": inbound.SNI,
 			"reality": map[string]interface{}{
 				"enabled":    true,
 				"public_key": inbound.PublicKey,
@@ -259,9 +261,10 @@ func (g *ConfigGenerator) GenerateShareURL(user *models.User, inbound *models.In
 func (g *ConfigGenerator) generateVLESSRealityURL(user *models.User, inbound *models.Inbound) (string, error) {
 	// Формат: vless://uuid@server:port?params#name
 	params := url.Values{}
-	// Anti-TSPU: пустой SNI + без fingerprint обходят эвристику DPI
+	// Anti-TSPU: SNI обязателен для REALITY, но без uTLS fingerprint
 	params.Set("type", "tcp")
 	params.Set("security", "reality")
+	params.Set("sni", inbound.SNI)
 	params.Set("pbk", inbound.PublicKey)
 	params.Set("sid", inbound.ShortID)
 	params.Set("flow", "xtls-rprx-vision")

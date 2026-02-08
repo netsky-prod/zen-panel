@@ -62,7 +62,7 @@ services:
 
   # sing-box VPN Server (host network for direct port binding)
   singbox:
-    image: ghcr.io/sagernet/sing-box:latest
+    image: ghcr.io/sagernet/sing-box:v1.12.20
     container_name: zen-singbox
     network_mode: host
     restart: unless-stopped

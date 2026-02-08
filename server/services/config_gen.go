@@ -131,10 +131,6 @@ func (g *ConfigGenerator) GenerateSingboxConfig(user *models.User, inbounds []mo
 			"tag":  "direct",
 		},
 		map[string]interface{}{
-			"type": "block",
-			"tag":  "block",
-		},
-		map[string]interface{}{
 			"type": "dns",
 			"tag":  "dns-out",
 		},
@@ -199,10 +195,16 @@ func (g *ConfigGenerator) generateVLESSWSOutbound(user *models.User, inbound *mo
 		port = 443
 	}
 
+	// Для WS используем домен (SNI) вместо IP — выглядит как обычный HTTPS трафик
+	server := inbound.SNI
+	if server == "" {
+		server = inbound.Node.Address
+	}
+
 	return map[string]interface{}{
 		"type":        "vless",
 		"tag":         tag,
-		"server":      inbound.Node.Address,
+		"server":      server,
 		"server_port": port,
 		"uuid":        user.UUID.String(),
 		"tls": map[string]interface{}{
@@ -219,6 +221,8 @@ func (g *ConfigGenerator) generateVLESSWSOutbound(user *models.User, inbound *mo
 			"headers": map[string]interface{}{
 				"Host": inbound.SNI,
 			},
+			"early_data_header_name": "Sec-WebSocket-Protocol",
+			"max_early_data":         2048,
 		},
 	}, nil
 }
@@ -301,9 +305,15 @@ func (g *ConfigGenerator) generateVLESSWSURL(user *models.User, inbound *models.
 	params.Set("fp", inbound.Fingerprint)
 
 	name := url.QueryEscape(fmt.Sprintf("%s - %s", inbound.Node.Name, inbound.Name))
+	// Для WS используем домен (SNI) вместо IP — менее палевно для DPI
+	server := inbound.SNI
+	if server == "" {
+		server = inbound.Node.Address
+	}
+
 	shareURL := fmt.Sprintf("vless://%s@%s:%d?%s#%s",
 		user.UUID.String(),
-		inbound.Node.Address,
+		server,
 		port,
 		params.Encode(),
 		name,

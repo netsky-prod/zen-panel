@@ -95,8 +95,10 @@ type StandardTLS struct {
 
 // WSTransport - WebSocket транспорт
 type WSTransport struct {
-	Type string `json:"type"`
-	Path string `json:"path"`
+	Type                string `json:"type"`
+	Path                string `json:"path"`
+	EarlyDataHeaderName string `json:"early_data_header_name,omitempty"`
+	MaxEarlyData        int    `json:"max_early_data,omitempty"`
 }
 
 // Hysteria2Inbound - Hysteria2 inbound конфиг
@@ -186,8 +188,10 @@ func (g *TemplateGenerator) GenerateVLESSWSInbound(inbound *models.Inbound, user
 		Port:   inbound.ListenPort,
 		Users:  vlessUsers,
 		Transport: WSTransport{
-			Type: "ws",
-			Path: wsPath,
+			Type:                "ws",
+			Path:                wsPath,
+			EarlyDataHeaderName: "Sec-WebSocket-Protocol",
+			MaxEarlyData:        2048,
 		},
 	}
 
@@ -249,7 +253,6 @@ func (g *TemplateGenerator) GenerateServerConfig(inbounds []models.Inbound, user
 		},
 		Outbounds: []OutboundConfig{
 			{Type: "direct", Tag: "direct"},
-			{Type: "block", Tag: "block"},
 		},
 		Route: &RouteConfig{
 			Final: "direct",

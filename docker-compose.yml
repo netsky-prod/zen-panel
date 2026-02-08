@@ -60,17 +60,8 @@ services:
     networks:
       - zen-network
 
-  # sing-box VPN Server (host network for direct port binding)
-  singbox:
-    image: ghcr.io/sagernet/sing-box:v1.12.20
-    container_name: zen-singbox
-    network_mode: host
-    restart: unless-stopped
-    volumes:
-      - singbox_config:/etc/sing-box
-    command: ["run", "-c", "/etc/sing-box/config.json"]
-    cap_add:
-      - NET_ADMIN
+  # sing-box runs as systemd service on host, not in Docker
+  # (needs host networking + TUN access, simpler via systemd)
 
   # Node Agent - manages sing-box config
   node-agent:
@@ -79,6 +70,8 @@ services:
       dockerfile: Dockerfile
     container_name: zen-node-agent
     restart: unless-stopped
+    pid: host
+    privileged: true
     ports:
       - "${NODE_AGENT_PORT:-8880}:8880"  # API для управления нодой
     environment:
@@ -86,15 +79,11 @@ services:
       API_TOKEN: ${NODE_API_TOKEN:-secret-node-token}
       LISTEN_ADDR: ":8880"
     volumes:
-      - singbox_config:/etc/sing-box
-      - /var/run/docker.sock:/var/run/docker.sock
-    depends_on:
-      - singbox
+      - /etc/sing-box:/etc/sing-box
     networks:
       - zen-network
 
 volumes:
-  singbox_config:
   postgres_data:
 
 networks:

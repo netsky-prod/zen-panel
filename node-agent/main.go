@@ -104,8 +104,8 @@ func restartHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Пытаемся перезапустить через docker
-	cmd := exec.Command("docker", "restart", "zen-singbox")
+	// Перезапуск sing-box через systemctl на хосте (nsenter в PID namespace хоста)
+	cmd := exec.Command("nsenter", "-t", "1", "-m", "-u", "-i", "-n", "-p", "--", "systemctl", "restart", "sing-box")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Printf("Failed to restart sing-box: %v, output: %s", err, output)
